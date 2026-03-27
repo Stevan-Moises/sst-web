@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SST - Saúde Ocupacional</title>
+    <title>SST | Segurança e Saúde do Trabalho</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="./src/img/favicon.png" type="image/x-icon">
 
     <!-- Dependências -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -30,7 +33,7 @@
                     class="h-8 w-8 bg-brand-500 rounded-lg flex items-center justify-center text-white shadow-lg shadow-brand-500/30 mr-3">
                     <i class="fa-solid fa-shield-halved text-sm"></i>
                 </div>
-                <span class="text-white font-bold text-lg tracking-wide">SST Web</span>
+                <span class="text-white font-bold text-lg tracking-wide">SST</span>
             </div>
 
             <!-- Links do Menu -->
@@ -71,8 +74,7 @@
                     </div>
                 </div>
                 <div class="text-[10px] text-slate-400 font-medium leading-relaxed">
-                    Desenvolvido com muito ☕ por <a href="#" target="_blank"
-                        rel="noopener noreferrer"
+                    Desenvolvido com muito ☕ por <a href="#" target="_blank" rel="noopener noreferrer"
                         class="text-brand-400 hover:text-brand-300 transition-colors font-bold">Stevan Moises</a>
                 </div>
             </div>
@@ -536,7 +538,8 @@
                             <span class="font-semibold text-slate-800">Preencha os Dados:</span>
                             <ul class="list-disc list-inside ml-6 mt-2 text-xs space-y-1 text-slate-500">
                                 <li><strong>Datas:</strong> Devem obrigatoriamente usar o formato
-                                    <code>AAAA-MM-DD</code> (Ex: 2026-03-25).</li>
+                                    <code>AAAA-MM-DD</code> (Ex: 2026-03-25).
+                                </li>
                                 <li><strong>Periodicidade_Anos:</strong> Digite apenas o número <code>1</code> (Anual)
                                     ou <code>2</code> (Bienal).</li>
                                 <li><strong>Situacao:</strong> Digite <code>Ativo</code> ou <code>INSS</code>.</li>
@@ -578,7 +581,8 @@
                 </div>
                 <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Renovar ASO</h3>
                 <p class="text-sm text-slate-500 text-center mb-6">Informe a data do novo exame realizado por
-                    <br><strong class="text-slate-800" id="nomeRenovacao"></strong>.</p>
+                    <br><strong class="text-slate-800" id="nomeRenovacao"></strong>.
+                </p>
                 <input type="hidden" id="idRenovacao">
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Data da Realização</label>
@@ -593,6 +597,74 @@
                     <button type="button" onclick="fecharModalRenovacao()"
                         class="w-full py-3 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">
                         Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Exclusão -->
+    <div id="modalExclusao" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                onclick="fecharModalExclusao()"></div>
+
+            <div
+                class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-md w-full border border-slate-100 p-8">
+                <div
+                    class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto shadow-inner">
+                    <i class="fa-solid fa-trash-can"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Excluir Colaborador</h3>
+                <p class="text-sm text-slate-500 text-center mb-6">Tem certeza que deseja remover <br><strong
+                        class="text-slate-800" id="nomeExclusao"></strong>?<br>Esta ação é irreversível.</p>
+
+                <input type="hidden" id="idExclusao">
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="fecharModalExclusao()"
+                        class="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" onclick="confirmarExclusao()"
+                        class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl shadow-md hover:bg-red-700 hover:shadow-lg transform transition-all hover:-translate-y-0.5">
+                        Sim, Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Importação -->
+    <div id="modalConfirmacaoImportacao" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm transition-opacity"
+                onclick="fecharModalConfirmacaoImportacao()"></div>
+
+            <div
+                class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-md w-full border border-slate-100 p-8">
+                <div
+                    class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto shadow-inner">
+                    <i class="fa-solid fa-code-merge"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Confirmar Importação</h3>
+                <p class="text-sm text-slate-500 text-center mb-6">Identificamos <strong class="text-brand-600 text-lg"
+                        id="qtdImportacao">0</strong> registros válidos no seu CSV.<br>Como deseja prosseguir?</p>
+
+                <div class="flex flex-col gap-3">
+                    <button type="button" onclick="confirmarImportacao('substituir')"
+                        class="w-full py-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Substituir Base Atual
+                    </button>
+                    <button type="button" onclick="confirmarImportacao('mesclar')"
+                        class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl shadow-md hover:bg-brand-700 transform transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Apenas Adicionar Novos
+                    </button>
+                    <button type="button" onclick="fecharModalConfirmacaoImportacao()"
+                        class="w-full py-3 mt-2 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">
+                        Cancelar Importação
                     </button>
                 </div>
             </div>

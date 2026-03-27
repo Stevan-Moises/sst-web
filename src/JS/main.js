@@ -1,10 +1,11 @@
 // --- PONTO DE ENTRADA E ORQUESTRAÇÃO (Main) ---
 import { DATA_ATUAL } from './utils.js';
 import { colaboradores, salvarNoArmazenamento } from './store.js';
-import { baixarModeloCSV, exportarCSV, lidarImportacaoCSV } from './csv.js';
+import { baixarModeloCSV, exportarCSV, lidarImportacaoCSV, confirmarImportacao } from './csv.js';
 import {
     filtrosAtuais, mudarTela, abrirModal, fecharModal, abrirModalImportacao,
     fecharModalImportacao, abrirModalRenovacao, fecharModalRenovacao,
+    abrirModalExclusao, fecharModalExclusao, abrirModalConfirmacaoImportacao, fecharModalConfirmacaoImportacao,
     renderizarPainel, renderizarTabela, mostrarNotificacao, verificarStatusBackup
 } from './ui.js';
 
@@ -59,14 +60,6 @@ const editarColaborador = (id) => {
     abrirModal();
 };
 
-const excluirColaborador = (id) => {
-    if (confirm('Tem certeza que deseja remover este colaborador? A ação é irreversível.')) {
-        const novosDados = colaboradores.filter(e => e.id !== id);
-        salvarNoArmazenamento(novosDados);
-        mostrarNotificacao('Colaborador removido da base.', 'info');
-    }
-};
-
 const confirmarRenovacao = () => {
     const id = document.getElementById('idRenovacao').value;
     const novaData = document.getElementById('novaDataExame').value;
@@ -86,35 +79,18 @@ const confirmarRenovacao = () => {
     }
 };
 
-const definirFiltro = (tipo, valor) => {
-    if (tipo === 'status') {
-        filtrosAtuais.status = valor;
-        document.getElementById('filtroStatus').value = valor;
-    }
-    if (valor === 'Todos' && tipo === 'status') {
-        document.getElementById('inputBusca').value = '';
-        document.getElementById('filtroFilial').value = 'Todas';
-        document.getElementById('filtroStatus').value = 'Todos';
-        filtrosAtuais.busca = '';
-        filtrosAtuais.filial = 'Todas';
-        filtrosAtuais.status = 'Todos';
-    }
-    renderizarTabela();
+// --- NOVA FUNÇÃO DE EXCLUSÃO DE DADOS ---
+const confirmarExclusao = () => {
+    const id = document.getElementById('idExclusao').value;
+    // Filtra removendo o colaborador com o ID selecionado
+    const novosDados = colaboradores.filter(e => e.id !== id);
+    salvarNoArmazenamento(novosDados);
+    mostrarNotificacao('Colaborador removido da base.', 'info');
+    fecharModalExclusao();
 };
 
-const irParaFiltro = (status) => {
-    definirFiltro('status', status);
-    mudarTela('operacao');
-};
-
-// --- EXPORTANDO PARA O ESCOPO GLOBAL (HTML) ---
-// Como estamos usando ES6 Modules, o HTML perde o acesso direto às funções. 
-// Precisamos pendurá-las no objeto "window" para que os "onclick" funcionem.
-
+// --- EXPOSIÇÃO GLOBAL PARA O HTML ---
 window.mudarTela = mudarTela;
-window.irParaFiltro = irParaFiltro;
-window.definirFiltro = definirFiltro;
-
 window.abrirModal = abrirModal;
 window.fecharModal = fecharModal;
 window.abrirModalImportacao = abrirModalImportacao;
@@ -122,9 +98,18 @@ window.fecharModalImportacao = fecharModalImportacao;
 window.abrirModalRenovacao = abrirModalRenovacao;
 window.fecharModalRenovacao = fecharModalRenovacao;
 
+// Expondo os controladores do novo Modal de Exclusão
+window.abrirModalExclusao = abrirModalExclusao;
+window.fecharModalExclusao = fecharModalExclusao;
+window.confirmarExclusao = confirmarExclusao;
+
+// Expondo os controladores do novo Modal de Confirmação de Importação
+window.abrirModalConfirmacaoImportacao = abrirModalConfirmacaoImportacao;
+window.fecharModalConfirmacaoImportacao = fecharModalConfirmacaoImportacao;
+window.confirmarImportacao = confirmarImportacao;
+
 window.lidarEnvioFormulario = lidarEnvioFormulario;
 window.editarColaborador = editarColaborador;
-window.excluirColaborador = excluirColaborador;
 window.confirmarRenovacao = confirmarRenovacao;
 
 window.baixarModeloCSV = baixarModeloCSV;
@@ -158,4 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderizarTabela();
     mudarTela('painel');
     verificarStatusBackup();
+});
+
+// Padrão de Reatividade: Ouve o evento da store.js e atualiza a tela automaticamente
+window.addEventListener('sstDadosAtualizados', () => {
+    renderizarPainel();
+    renderizarTabela();
 });

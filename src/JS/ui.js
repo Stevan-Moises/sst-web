@@ -96,6 +96,31 @@ export const abrirModalRenovacao = (id) => {
 };
 export const fecharModalRenovacao = () => { document.getElementById('modalRenovacao').classList.add('hidden'); document.getElementById('novaDataExame').value = ''; };
 
+export const abrirModalExclusao = (id) => {
+    const colab = colaboradores.find(e => e.id === id);
+    if (!colab) return;
+    document.getElementById('idExclusao').value = id;
+    document.getElementById('nomeExclusao').textContent = colab.nome;
+    document.body.classList.add('modal-aberto');
+    document.getElementById('modalExclusao').classList.remove('hidden');
+};
+export const fecharModalExclusao = () => {
+    document.body.classList.remove('modal-aberto');
+    document.getElementById('modalExclusao').classList.add('hidden');
+};
+
+// --- CORREÇÃO APLICADA AQUI: Travamento do body ---
+export const abrirModalConfirmacaoImportacao = (quantidade) => {
+    document.body.classList.add('modal-aberto');
+    document.getElementById('qtdImportacao').textContent = quantidade;
+    document.getElementById('modalConfirmacaoImportacao').classList.remove('hidden');
+};
+
+export const fecharModalConfirmacaoImportacao = () => {
+    document.body.classList.remove('modal-aberto');
+    document.getElementById('modalConfirmacaoImportacao').classList.add('hidden');
+};
+
 // Renderizadores de Dados
 export const renderizarPainel = () => {
     let indicadores = { total: 0, vencidos: 0, avencer: 0, regulares: 0 };
@@ -237,7 +262,7 @@ export const renderizarTabela = () => {
                         <div class="flex flex-col items-start gap-1.5">
                             ${badgeStatus}
                             <div class="text-[11px] font-semibold ${calculo.status === 'Vencido' && colab.situacao !== 'INSS' ? 'text-red-500' : 'text-slate-400'} ml-1">
-                                ${colab.situacao === 'INSS' ? 'Pausado' : (calculo.diferencaDias < 0 ? `Atraso: ${Math.abs(calculo.diferencaDias)} dias` : `P/ ${formatarData(calculo.proximaData)}`)}
+                                ${colab.situacao === 'INSS' ? 'Pausado' : (calculo.diferencaDias < 0 ? `Atraso: ${Math.abs(calculo.diferencaDias)} dias` : `Vence em: ${formatarData(calculo.proximaData)}`)}
                             </div>
                         </div>
                     </td>
@@ -245,7 +270,7 @@ export const renderizarTabela = () => {
                         <div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                             <button onclick="abrirModalRenovacao('${colab.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg ${colab.situacao === 'INSS' ? 'text-slate-300 bg-slate-50 cursor-not-allowed' : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800'}" title="Registrar novo ASO" ${colab.situacao === 'INSS' ? 'disabled' : ''}><i class="fa-solid fa-file-medical"></i></button>
                             <button onclick="editarColaborador('${colab.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-brand-600 bg-brand-50 hover:bg-brand-100 hover:text-brand-800" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="excluirColaborador('${colab.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700" title="Remover"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="abrirModalExclusao('${colab.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700" title="Remover"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </td>
                 </tr>

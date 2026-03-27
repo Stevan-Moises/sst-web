@@ -1,12 +1,15 @@
 // --- ENTRADA E SAÍDA DE DADOS (Importação/Exportação CSV) ---
 import { colaboradores, salvarNoArmazenamento, registrarBackup } from './store.js';
-import { mostrarNotificacao, fecharModalImportacao, verificarStatusBackup } from './ui.js';
+import { mostrarNotificacao, fecharModalImportacao, verificarStatusBackup, abrirModalConfirmacaoImportacao, fecharModalConfirmacaoImportacao } from './ui.js';
+
+let dadosPendentesImportacao = [];
 
 export const baixarModeloCSV = () => {
     const cabecalhos = ['ID', 'Matricula', 'Nome', 'Funcao', 'Filial', 'Admissao', 'Ultimo_ASO', 'Periodicidade_Anos', 'Situacao'];
     const linhaExemplo = ['', '00123', 'EXEMPLO DA SILVA', 'OPERADOR', 'FILIAL 02', '2022-01-15', '2025-02-10', '1', 'Ativo'];
 
-    const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(',') + "\n" + linhaExemplo.join(',');
+    // Formato com ponto e vírgula, ideal para o Excel BR
+    const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(';') + "\n" + linhaExemplo.join(';');
     const uriCodificada = encodeURI(conteudoCsv);
     const linkDownload = document.createElement("a");
     linkDownload.setAttribute("href", uriCodificada);
@@ -29,9 +32,9 @@ export const exportarCSV = () => {
         colab.ultimoExame,
         colab.periodicidade,
         colab.situacao || 'Ativo'
-    ].join(','));
+    ].join(';'));
 
-    const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(',') + "\n" + linhas.join("\n");
+    const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(';') + "\n" + linhas.join("\n");
     const uriCodificada = encodeURI(conteudoCsv);
     const linkDownload = document.createElement("a");
     linkDownload.setAttribute("href", uriCodificada);
@@ -47,6 +50,10 @@ export const exportarCSV = () => {
 
 export const lidarImportacaoCSV = (evento) => {
     const arquivo = evento.target.files[0];
+
+    // FIX SÊNIOR: Destrava o input de file nativamente limpando a memória do navegador, permitindo reuso infinito!
+    evento.target.value = '';
+
     if (!arquivo) return;
 
     const leitor = new FileReader();
@@ -58,6 +65,7 @@ export const lidarImportacaoCSV = (evento) => {
             return;
         }
 
+        // Parser Inteligente: Agora suporta vírgula (,) e ponto e vírgula (;)
         const analisarLinhaCSV = (str) => {
             let retorno = [], entreAspas = false, valor = '';
             for (let caractere of str) {
@@ -65,7 +73,7 @@ export const lidarImportacaoCSV = (evento) => {
                     if (caractere === '"') entreAspas = false; else valor += caractere;
                 } else {
                     if (caractere === '"') entreAspas = true;
-                    else if (caractere === ',') { retorno.push(valor.trim()); valor = ''; }
+                    else if (caractere === ',' || caractere === ';') { retorno.push(valor.trim()); valor = ''; }
                     else valor += caractere;
                 }
             }
@@ -78,6 +86,7 @@ export const lidarImportacaoCSV = (evento) => {
 
         for (let i = 1; i < linhasArquivo.length; i++) {
             const linha = analisarLinhaCSV(linhasArquivo[i]);
+            // O Excel BR usa ponto e vírgula, se não separasse bem, o 'length' seria 1 e ignorava. Agora está resolvido!
             if (linha.length < 7) continue;
 
             novosColaboradores.push({
@@ -94,23 +103,36 @@ export const lidarImportacaoCSV = (evento) => {
             contagemLinhas++;
         }
 
+        // Se conseguiu extrair dados reais, abre o Modal de Confirmação!
         if (novosColaboradores.length > 0) {
-            let novosDados = [...colaboradores];
-            if (confirm(`Identificamos ${contagemLinhas} registros.\n\nDeseja SUBSTITUIR toda a base atual? (Cancelar irá apenas fundir os dados novos)`)) {
-                novosDados = novosColaboradores;
-            } else {
-                novosColaboradores.forEach(novoColab => {
-                    if (!novosDados.find(e => e.id === novoColab.id)) novosDados.push(novoColab);
-                    else { novoColab.id = Date.now().toString() + Math.random().toString(36).substr(2, 5); novosDados.push(novoColab); }
-                });
-            }
-            salvarNoArmazenamento(novosDados);
+            dadosPendentesImportacao = novosColaboradores;
+
+            // FIX DE ARQUITETURA: Fecha o primeiro modal (Importação) ANTES de abrir o segundo (Confirmação)
             fecharModalImportacao();
-            mostrarNotificacao('Dados importados e sincronizados!', 'success');
+            abrirModalConfirmacaoImportacao(contagemLinhas);
         } else {
-            mostrarNotificacao('Falha na leitura dos dados CSV.', 'error');
+            mostrarNotificacao('Nenhum dado válido encontrado. Verifique o CSV.', 'error');
         }
-        evento.target.value = '';
     };
     leitor.readAsText(arquivo);
+};
+
+export const confirmarImportacao = (modo) => {
+    let novosDados = [...colaboradores];
+
+    if (modo === 'substituir') {
+        novosDados = dadosPendentesImportacao;
+    } else if (modo === 'mesclar') {
+        dadosPendentesImportacao.forEach(novoColab => {
+            if (!novosDados.find(e => e.id === novoColab.id)) novosDados.push(novoColab);
+            else { novoColab.id = Date.now().toString() + Math.random().toString(36).substr(2, 5); novosDados.push(novoColab); }
+        });
+    }
+
+    salvarNoArmazenamento(novosDados);
+    dadosPendentesImportacao = []; // Limpa cache
+
+    // Apenas o modal de confirmação precisa de ser fechado aqui (pois o primeiro já foi)
+    fecharModalConfirmacaoImportacao();
+    mostrarNotificacao('Dados importados e sincronizados!', 'success');
 };
