@@ -2,13 +2,16 @@
 import { colaboradores, salvarNoArmazenamento, registrarBackup } from './store.js';
 import { mostrarNotificacao, fecharModalImportacao, verificarStatusBackup, abrirModalConfirmacaoImportacao, fecharModalConfirmacaoImportacao } from './ui.js';
 
+// IMPORTANTE: Trazendo os tradutores de data
+import { formatarDataParaISO, formatarDataParaBR } from './utils.js';
+
 let dadosPendentesImportacao = [];
 
 export const baixarModeloCSV = () => {
     const cabecalhos = ['ID', 'Matricula', 'Nome', 'Funcao', 'Filial', 'Admissao', 'Ultimo_ASO', 'Periodicidade_Anos', 'Situacao'];
-    const linhaExemplo = ['', '00123', 'EXEMPLO DA SILVA', 'OPERADOR', 'FILIAL 02', '2022-01-15', '2025-02-10', '1', 'Ativo'];
 
-    // Formato com ponto e vírgula, ideal para o Excel BR
+    const linhaExemplo = ['', '00123', 'EXEMPLO DA SILVA', 'OPERADOR', 'FILIAL 02', '15/01/2022', '10/02/2025', '1', 'ATIVO'];
+
     const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(';') + "\n" + linhaExemplo.join(';');
     const uriCodificada = encodeURI(conteudoCsv);
     const linkDownload = document.createElement("a");
@@ -28,8 +31,8 @@ export const exportarCSV = () => {
         `"${colab.nome}"`,
         `"${colab.funcao}"`,
         `"${colab.filial}"`,
-        colab.admissao || '',
-        colab.ultimoExame,
+        formatarDataParaBR(colab.admissao),
+        formatarDataParaBR(colab.ultimoExame),
         colab.periodicidade,
         colab.situacao || 'Ativo'
     ].join(';'));
@@ -50,68 +53,91 @@ export const exportarCSV = () => {
 
 export const lidarImportacaoCSV = (evento) => {
     const arquivo = evento.target.files[0];
-
-    // FIX SÊNIOR: Destrava o input de file nativamente limpando a memória do navegador, permitindo reuso infinito!
     evento.target.value = '';
 
     if (!arquivo) return;
 
     const leitor = new FileReader();
     leitor.onload = (e) => {
-        const texto = e.target.result;
-        const linhasArquivo = texto.split('\n').filter(linha => linha.trim() !== '');
-        if (linhasArquivo.length < 2) {
-            mostrarNotificacao('Arquivo vazio ou formato inválido.', 'error');
-            return;
-        }
+        try {
+            const texto = e.target.result;
+            const linhasArquivo = texto.split('\n').filter(linha => linha.trim() !== '');
 
-        // Parser Inteligente: Agora suporta vírgula (,) e ponto e vírgula (;)
-        const analisarLinhaCSV = (str) => {
-            let retorno = [], entreAspas = false, valor = '';
-            for (let caractere of str) {
-                if (entreAspas) {
-                    if (caractere === '"') entreAspas = false; else valor += caractere;
-                } else {
-                    if (caractere === '"') entreAspas = true;
-                    else if (caractere === ',' || caractere === ';') { retorno.push(valor.trim()); valor = ''; }
-                    else valor += caractere;
-                }
+            if (linhasArquivo.length < 2) {
+                mostrarNotificacao('Arquivo vazio ou formato inválido.', 'error');
+                return;
             }
-            retorno.push(valor.trim());
-            return retorno;
-        };
 
-        let novosColaboradores = [];
-        let contagemLinhas = 0;
+            const analisarLinhaCSV = (str) => {
+                let retorno = [], entreAspas = false, valor = '';
+                for (let caractere of str) {
+                    if (entreAspas) {
+                        if (caractere === '"') entreAspas = false; else valor += caractere;
+                    } else {
+                        if (caractere === '"') entreAspas = true;
+                        else if (caractere === ',' || caractere === ';') { retorno.push(valor.trim()); valor = ''; }
+                        else valor += caractere;
+                    }
+                }
+                retorno.push(valor.trim());
+                return retorno;
+            };
 
-        for (let i = 1; i < linhasArquivo.length; i++) {
-            const linha = analisarLinhaCSV(linhasArquivo[i]);
-            // O Excel BR usa ponto e vírgula, se não separasse bem, o 'length' seria 1 e ignorava. Agora está resolvido!
-            if (linha.length < 7) continue;
+            // SANITIZADOR DE FILIAIS (Lógica Defensiva)
+            const padronizarFilial = (valorBruto) => {
+                if (!valorBruto) return '';
+                const textoLimpo = valorBruto.replace(/"/g, '').trim().toUpperCase();
 
-            novosColaboradores.push({
-                id: linha[0] || Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                matricula: linha[1] ? linha[1].replace(/"/g, '').trim() : '',
-                nome: linha[2] ? linha[2].replace(/"/g, '').trim().toUpperCase() : '',
-                funcao: linha[3] ? linha[3].replace(/"/g, '').trim().toUpperCase() : '',
-                filial: linha[4] ? linha[4].replace(/"/g, '').trim() : '',
-                admissao: linha[5] || '',
-                ultimoExame: linha[6],
-                periodicidade: parseInt(linha[7]) || 1,
-                situacao: linha[8] ? linha[8].replace(/"/g, '').trim() : 'Ativo'
-            });
-            contagemLinhas++;
-        }
+                // O Match procura por qualquer sequência de números no texto
+                const numerosEncontrados = textoLimpo.match(/\d+/);
 
-        // Se conseguiu extrair dados reais, abre o Modal de Confirmação!
-        if (novosColaboradores.length > 0) {
-            dadosPendentesImportacao = novosColaboradores;
+                if (numerosEncontrados) {
+                    // Pega o número, e garante que tenha 2 dígitos (ex: '2' vira '02')
+                    const numeroFormatado = String(numerosEncontrados[0]).padStart(2, '0');
+                    return `FILIAL ${numeroFormatado}`;
+                }
 
-            // FIX DE ARQUITETURA: Fecha o primeiro modal (Importação) ANTES de abrir o segundo (Confirmação)
-            fecharModalImportacao();
-            abrirModalConfirmacaoImportacao(contagemLinhas);
-        } else {
-            mostrarNotificacao('Nenhum dado válido encontrado. Verifique o CSV.', 'error');
+                // Se não achou número (ex: MATRIZ), devolve o texto original limpo
+                return textoLimpo;
+            };
+
+            let novosColaboradores = [];
+            let contagemLinhas = 0;
+
+            for (let i = 1; i < linhasArquivo.length; i++) {
+                const linha = analisarLinhaCSV(linhasArquivo[i]);
+
+                if (linha.length < 7) continue;
+
+                const sitDigitada = linha[8] ? linha[8].replace(/"/g, '').trim().toUpperCase() : '';
+
+                novosColaboradores.push({
+                    id: linha[0] || Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    matricula: linha[1] ? linha[1].replace(/"/g, '').trim() : '',
+                    nome: linha[2] ? linha[2].replace(/"/g, '').trim().toUpperCase() : '',
+                    funcao: linha[3] ? linha[3].replace(/"/g, '').trim().toUpperCase() : '',
+
+                    // NOVA LÓGICA DE FILIAL APLICADA AQUI
+                    filial: padronizarFilial(linha[4]),
+
+                    admissao: formatarDataParaISO(linha[5]),
+                    ultimoExame: formatarDataParaISO(linha[6]),
+                    periodicidade: parseInt(linha[7]) || 1,
+                    situacao: sitDigitada === 'INSS' ? 'INSS' : 'Ativo'
+                });
+                contagemLinhas++;
+            }
+
+            if (novosColaboradores.length > 0) {
+                dadosPendentesImportacao = novosColaboradores;
+                fecharModalImportacao();
+                abrirModalConfirmacaoImportacao(contagemLinhas);
+            } else {
+                mostrarNotificacao('Nenhum dado válido encontrado. Verifique o CSV.', 'error');
+            }
+        } catch (erro) {
+            console.error("Erro fatal capturado na importação:", erro);
+            mostrarNotificacao('Erro interno ao ler a planilha. Verifique o console.', 'error');
         }
     };
     leitor.readAsText(arquivo);
@@ -130,9 +156,7 @@ export const confirmarImportacao = (modo) => {
     }
 
     salvarNoArmazenamento(novosDados);
-    dadosPendentesImportacao = []; // Limpa cache
-
-    // Apenas o modal de confirmação precisa de ser fechado aqui (pois o primeiro já foi)
+    dadosPendentesImportacao = [];
     fecharModalConfirmacaoImportacao();
     mostrarNotificacao('Dados importados e sincronizados!', 'success');
 };

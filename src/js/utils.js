@@ -43,3 +43,31 @@ export const obterCorAvatar = (nome) => {
     for (let i = 0; i < nome.length; i++) soma += nome.charCodeAt(i);
     return cores[soma % cores.length];
 };
+
+// Converte de DD/MM/YYYY (Humano) para YYYY-MM-DD (Computador)
+export const formatarDataParaISO = (dataBR) => {
+    if (!dataBR) return '';
+    const strLimpa = dataBR.trim();
+    // Prevenção: Se o dado já vier com traço (já é ISO), ele deixa passar.
+    if (strLimpa.includes('-')) return strLimpa;
+    
+    const partes = strLimpa.split('/');
+    if (partes.length !== 3) return ''; // Se não achar as 3 partes, cancela.
+    
+    const [dia, mes, ano] = partes;
+    return `${ano}-${mes}-${dia}`;
+};
+
+// Converte de YYYY-MM-DD (Computador) para DD/MM/YYYY (Humano) para a Exportação
+export const formatarDataParaBR = (dataISO) => {
+    if (!dataISO) return '';
+    const strLimpa = dataISO.trim();
+    // Prevenção: Se o dado já tiver barra (já é BR), ele deixa passar.
+    if (strLimpa.includes('/')) return strLimpa;
+    
+    const partes = strLimpa.split('-');
+    if (partes.length !== 3) return '';
+    
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+};
