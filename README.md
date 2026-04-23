@@ -27,10 +27,11 @@ O código está organizado para facilitar a leitura e manutenção:
     /
     ├── src/
     │   ├── js/
-    │   │   ├── main.js       # Arquivo principal que inicia o sistema
+    │   │   ├── main.js       # Arquivo principal que inicia e orquestra o sistema
+    │   │   ├── csv.js        # Motor de importação, exportação e tratamento de planilhas
     │   │   ├── ui.js         # Controla tudo o que aparece na tela para o usuário
-    │   │   ├── storage.js    # Gerencia o salvamento e a leitura dos dados
-    │   │   └── utils.js      # Funções de apoio e regras de funcionamento
+    │   │   ├── store.js      # Gerencia o salvamento e a leitura dos dados (Cofre)
+    │   │   └── utils.js      # Funções de apoio, conversão de datas e regras de negócio
     │   └── css/              # Arquivos de estilo visual otimizados
     ├── public/               # Imagens e ícones utilizados no site
     ├── index.html            # Estrutura principal da página web
@@ -39,6 +40,8 @@ O código está organizado para facilitar a leitura e manutenção:
 ## ✨ Funcionalidades
 
 - [x] **Painel Administrativo**: Tela de controle adaptável a qualquer tamanho de tela para visualização e gestão de chamados.
+- [x] **Motor de Importação/Exportação CSV**: Sistema robusto para carga de dados em lote via planilhas, com conversão automática de formatação e prevenção de erros.
+- [x] **Sanitização Inteligente de Dados**: O sistema corrige automaticamente erros de digitação do usuário (letras minúsculas, identificação de filiais por números) antes de salvar na base.
 - [x] **Busca em Tempo Real**: Filtro de alta velocidade para encontrar colaboradores e processos instantaneamente.
 - [x] **Prevenção de Perda de Dados**: Sistema inteligente que notifica o usuário para exportar e salvar um backup das informações a cada 7 dias.
 - [x] **Operação Contínua**: O sistema continua funcionando de forma fluida sem depender de internet constante, com dados salvos no dispositivo.
