@@ -24,30 +24,66 @@ export const mostrarNotificacao = (mensagem, tipo = 'success') => {
     }, 3500);
 };
 
-// Guardião de Backup
+// Guardião de Backup (Regra de Negócio: Fechamento Semanal na Sexta-feira)
 export const verificarStatusBackup = () => {
+    const modalBloqueio = document.getElementById('modalBloqueioBackup');
+
+    // Se a base estiver vazia, não há o que fazer backup
+    if (colaboradores.length === 0) {
+        modalBloqueio.classList.add('hidden');
+        return;
+    }
+
     const strUltimoBackup = obterDataUltimoBackup();
-    const bannerAlerta = document.getElementById('alertaBackup');
 
-    if (colaboradores.length > 6) {
-        if (!strUltimoBackup) {
-            bannerAlerta.classList.remove('hidden');
-            return;
-        }
+    // Se nunca fez backup na vida, mostra o aviso e trava
+    if (!strUltimoBackup) {
+        modalBloqueio.classList.remove('hidden');
+        return;
+    }
 
-        const ultimoBackup = new Date(strUltimoBackup);
-        const diferencaTempo = DATA_ATUAL.getTime() - ultimoBackup.getTime();
-        const diferencaDias = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+    const ultimoBackup = new Date(strUltimoBackup);
 
-        if (diferencaDias >= 7) {
-            bannerAlerta.classList.remove('hidden');
-        } else {
-            bannerAlerta.classList.add('hidden');
-        }
+    // LÓGICA DE CALENDÁRIO: Descobrir a data da última sexta-feira
+    const hoje = new Date(DATA_ATUAL);
+    const diaDaSemana = hoje.getDay(); // Retorna de 0 (Domingo) a 6 (Sábado)
+
+    // Quantos dias precisamos voltar no tempo para chegar na última sexta?
+    const diasParaSexta = diaDaSemana >= 5 ? diaDaSemana - 5 : diaDaSemana + 2;
+
+    const ultimaSexta = new Date(hoje);
+    ultimaSexta.setDate(hoje.getDate() - diasParaSexta);
+    ultimaSexta.setHours(0, 0, 0, 0); // Zera as horas para precisão cirúrgica
+
+    // A VALIDAÇÃO ABSOLUTA: Se deve o backup, o modal trava a tela.
+    if (ultimoBackup.getTime() < ultimaSexta.getTime()) {
+        modalBloqueio.classList.remove('hidden');
+    } else {
+        modalBloqueio.classList.add('hidden');
     }
 };
 
-// Controladores de Telas (Roteamento)
+// --- CONTROLE DO MENU MOBILE ---
+export const alternarMenuMobile = () => {
+    const menu = document.getElementById('menuLateral');
+
+    // Ativa a nossa regra CSS segura feita no cabeçalho do HTML
+    menu.classList.toggle('menu-mobile-ativo');
+
+    let backdrop = document.getElementById('backdropMenu');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'backdropMenu';
+        // Fundo embaçado (z-40) para ficar atrás do menu (z-50) e sumir no desktop
+        backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden';
+        backdrop.onclick = alternarMenuMobile;
+        document.body.appendChild(backdrop);
+    } else {
+        backdrop.remove();
+    }
+};
+
+// Controladores de Telas
 export const mudarTela = (nomeTela) => {
     document.getElementById('tela-painel').classList.add('hidden');
     document.getElementById('tela-operacao').classList.add('hidden');
@@ -70,6 +106,15 @@ export const mudarTela = (nomeTela) => {
         document.getElementById('tituloPagina').textContent = "Gestão de ASOs";
         navOperacao.className = "flex items-center gap-3 px-4 py-3 rounded-xl text-brand-50 bg-brand-600/20 font-semibold border border-brand-500/30 transition-all";
         navOperacao.querySelector('i').className = "fa-solid fa-users-viewfinder w-5 text-center text-brand-400";
+    }
+
+    // FIX SÊNIOR: Fecha o menu automaticamente no celular após clicar em um link
+    // Agora rastreia a nossa classe CSS blindada 'menu-mobile-ativo'
+    if (window.innerWidth < 768) {
+        const menu = document.getElementById('menuLateral');
+        if (menu && menu.classList.contains('menu-mobile-ativo')) {
+            alternarMenuMobile();
+        }
     }
 };
 

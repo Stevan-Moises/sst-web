@@ -9,7 +9,6 @@ let dadosPendentesImportacao = [];
 
 export const baixarModeloCSV = () => {
     const cabecalhos = ['ID', 'Matricula', 'Nome', 'Funcao', 'Filial', 'Admissao', 'Ultimo_ASO', 'Periodicidade_Anos', 'Situacao'];
-
     const linhaExemplo = ['', '00123', 'EXEMPLO DA SILVA', 'OPERADOR', 'FILIAL 02', '15/01/2022', '10/02/2025', '1', 'ATIVO'];
 
     const conteudoCsv = "data:text/csv;charset=utf-8,\uFEFF" + cabecalhos.join(';') + "\n" + linhaExemplo.join(';');
@@ -83,21 +82,15 @@ export const lidarImportacaoCSV = (evento) => {
                 return retorno;
             };
 
-            // SANITIZADOR DE FILIAIS (Lógica Defensiva)
             const padronizarFilial = (valorBruto) => {
                 if (!valorBruto) return '';
                 const textoLimpo = valorBruto.replace(/"/g, '').trim().toUpperCase();
-
-                // O Match procura por qualquer sequência de números no texto
                 const numerosEncontrados = textoLimpo.match(/\d+/);
 
                 if (numerosEncontrados) {
-                    // Pega o número, e garante que tenha 2 dígitos (ex: '2' vira '02')
                     const numeroFormatado = String(numerosEncontrados[0]).padStart(2, '0');
                     return `FILIAL ${numeroFormatado}`;
                 }
-
-                // Se não achou número (ex: MATRIZ), devolve o texto original limpo
                 return textoLimpo;
             };
 
@@ -107,23 +100,38 @@ export const lidarImportacaoCSV = (evento) => {
             for (let i = 1; i < linhasArquivo.length; i++) {
                 const linha = analisarLinhaCSV(linhasArquivo[i]);
 
-                if (linha.length < 7) continue;
+                // Prevenção de Linhas Fantasmas (Lida com o bug do Excel exportar vírgulas vazias)
+                if (linha.join('').replace(/;/g, '').trim() === '') continue;
 
-                const sitDigitada = linha[8] ? linha[8].replace(/"/g, '').trim().toUpperCase() : '';
+                // --- O NÚCLEO DA BLINDAGEM DE DADOS ---
+
+                const idBruto = linha[0] ? linha[0].replace(/"/g, '').trim() : '';
+                const matBruta = linha[1] ? linha[1].replace(/"/g, '').trim() : '';
+                const nomeBruto = linha[2] ? linha[2].replace(/"/g, '').trim() : '';
+                const funcBruta = linha[3] ? linha[3].replace(/"/g, '').trim() : '';
+                const sitBruta = linha[8] ? linha[8].replace(/"/g, '').trim().toUpperCase() : '';
 
                 novosColaboradores.push({
-                    id: linha[0] || Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                    matricula: linha[1] ? linha[1].replace(/"/g, '').trim() : '',
-                    nome: linha[2] ? linha[2].replace(/"/g, '').trim().toUpperCase() : '',
-                    funcao: linha[3] ? linha[3].replace(/"/g, '').trim().toUpperCase() : '',
+                    // Se não tiver ID, gera um.
+                    id: idBruto || Date.now().toString() + Math.random().toString(36).substr(2, 5),
 
-                    // NOVA LÓGICA DE FILIAL APLICADA AQUI
+                    // MATRÍCULA: Arranca qualquer letra e deixa só número. Se vier em branco, aceita.
+                    matricula: matBruta.replace(/\D/g, ''),
+
+                    // NOME E FUNÇÃO: Força tudo para MAIÚSCULO silenciosamente. Aceita em branco.
+                    nome: nomeBruto.toUpperCase(),
+                    funcao: funcBruta.toUpperCase(),
+
+                    // FILIAL E DATAS: Os nossos conversores já são blindados.
                     filial: padronizarFilial(linha[4]),
-
                     admissao: formatarDataParaISO(linha[5]),
                     ultimoExame: formatarDataParaISO(linha[6]),
+
+                    // PERIODICIDADE: Pega só o número. Se o usuário deixou em branco, salva como 1 (Anual).
                     periodicidade: parseInt(linha[7]) || 1,
-                    situacao: sitDigitada === 'INSS' ? 'INSS' : 'Ativo'
+
+                    // SITUAÇÃO: Se a pessoa digitou qualquer variação de INSS (ex: " inss "), vira INSS. Se vazio, vira Ativo.
+                    situacao: sitBruta.includes('INSS') ? 'INSS' : 'Ativo'
                 });
                 contagemLinhas++;
             }

@@ -6,7 +6,7 @@ import {
     filtrosAtuais, mudarTela, abrirModal, fecharModal, abrirModalImportacao,
     fecharModalImportacao, abrirModalRenovacao, fecharModalRenovacao,
     abrirModalExclusao, fecharModalExclusao, abrirModalConfirmacaoImportacao, fecharModalConfirmacaoImportacao,
-    renderizarPainel, renderizarTabela, mostrarNotificacao, verificarStatusBackup
+    renderizarPainel, renderizarTabela, mostrarNotificacao, verificarStatusBackup, alternarMenuMobile
 } from './ui.js';
 
 // --- CONTROLADORES DE CRUD ---
@@ -91,6 +91,7 @@ const confirmarExclusao = () => {
 
 // --- EXPOSIÇÃO GLOBAL PARA O HTML ---
 window.mudarTela = mudarTela;
+window.alternarMenuMobile = alternarMenuMobile;
 window.abrirModal = abrirModal;
 window.fecharModal = fecharModal;
 window.abrirModalImportacao = abrirModalImportacao;

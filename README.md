@@ -17,7 +17,8 @@ Para este projeto, escolhi tecnologias modernas focadas em entregar a melhor exp
 
 - **Estilo e Design (Tailwind CSS v4)**: Utilizado para construir a interface visual. A vantagem dessa versão é que ela gera arquivos finais extremamente pequenos, fazendo o site carregar quase instantaneamente para o usuário.
 - **Código Organizado (JavaScript Modular)**: O projeto foi construído dividindo cada responsabilidade em arquivos separados. Isso mantém o código limpo, facilitando o trabalho em equipe e a correção de eventuais erros.
-- **Armazenamento e Segurança (Local-First)**: Utiliza a memória do próprio navegador para salvar o andamento do trabalho. Para garantir a segurança contra perdas acidentais (como a limpeza de histórico), implementei uma trava de segurança: um sistema que alerta o usuário para realizar o backup dos dados a cada 7 dias.
+- **Protocolo de Segurança (Local-First & Lockdown)**: Utiliza a memória do próprio navegador para salvar o andamento do trabalho. Para garantir a segurança contra perdas acidentais (como a limpeza de histórico), implementei uma trava de segurança rigorosa: um sistema que bloqueia o uso da plataforma semanalmente até que um backup dos dados seja exportado.
+- **Responsividade Híbrida**: Arquitetura de layout inteligente que transita perfeitamente entre uma barra lateral fixa no desktop e um menu off-canvas (deslizante com desfoque) no mobile, sem quebrar o fluxo natural do Flexbox.
 - **Atualização Automática (Deploy Contínuo)**: O projeto está integrado à plataforma Vercel. Isso significa que qualquer melhoria no código aprovada pela equipe é publicada e atualizada no site oficial em questão de segundos, de forma 100% automática.
 
 ## 🏗️ Estrutura do Projeto
@@ -34,18 +35,18 @@ O código está organizado para facilitar a leitura e manutenção:
     │   │   └── utils.js      # Funções de apoio, conversão de datas e regras de negócio
     │   └── css/              # Arquivos de estilo visual otimizados
     ├── public/               # Imagens e ícones utilizados no site
-    ├── index.html            # Estrutura principal da página web
+    ├── index.html            # Estrutura principal da página web e modais
     └── package.json          # Lista de configurações e ferramentas do projeto
 
 ## ✨ Funcionalidades
 
 - [x] **Painel Administrativo**: Tela de controle adaptável a qualquer tamanho de tela para visualização e gestão de chamados.
 - [x] **Motor de Importação/Exportação CSV**: Sistema robusto para carga de dados em lote via planilhas, com conversão automática de formatação e prevenção de erros.
-- [x] **Sanitização Inteligente de Dados**: O sistema corrige automaticamente erros de digitação do usuário (letras minúsculas, identificação de filiais por números) antes de salvar na base.
+- [x] **Sanitização Inteligente de Dados**: O sistema corrige automaticamente erros de digitação do usuário (letras minúsculas, identificação de filiais por números, limpeza de caracteres em matrículas) antes de salvar na base.
 - [x] **Busca em Tempo Real**: Filtro de alta velocidade para encontrar colaboradores e processos instantaneamente.
-- [x] **Prevenção de Perda de Dados**: Sistema inteligente que notifica o usuário para exportar e salvar um backup das informações a cada 7 dias.
+- [x] **Bloqueio de Segurança Semanal**: Sistema inteligente que bloqueia o uso do site toda sexta-feira, exigindo a exportação de um backup de segurança para liberar o acesso e evitar perda de dados.
 - [x] **Operação Contínua**: O sistema continua funcionando de forma fluida sem depender de internet constante, com dados salvos no dispositivo.
-- [x] **Design Acessível**: Layout que se adapta perfeitamente a celulares, tablets e computadores de mesa.
+- [x] **Menu Mobile Nativo**: Experiência de uso fluida em celulares com menu lateral deslizante e fundo com desfoque (blur).
 
 ## 🔧 Como Rodar o Projeto no seu Computador
 
